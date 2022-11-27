@@ -28,7 +28,7 @@
     const { x, y } = tetromino.position
 
     // 落下中のリアクティブなTetrominoインスタンスdataを分割代入
-    // data：tetrominos[TETROMINO_TYPE]
+    // data：tetrominos[TETROMINO_TYPE]：テトリスの形を表す配列
     const { data } = tetromino.current
 
     // リアクティブなFieldインスタンスのdata(現在のフィールド情報)を取得
@@ -42,12 +42,17 @@
       return Tetromino.id(type as TETROMINO_TYPE)
     }
 
-    // 落下中のテトロミノposition.yが指定した_yより下,かつテトロミノの縦幅分(cols)の範囲内だったら
+    // 落下中のテトロミノposition.yが指定した_yより下で
+    // かつ_yがテトロミノの縦幅分(cols)の範囲内だったら
     if (y <= _y && _y < y + data.length) {
-      // 落下中のposition.yからテトロミノの縦幅内の_yまでの距離cols
-      // このcols内は同じ色
+      // 落下中のposition.yからテトリミノの縦幅内の_yまでの距離
+      // テトリスの形上の設定上、縦幅(_y-y)は1～2cols
       const cols = data[_y - y]
+
+      // 指定_xがposition.yより右にある
+      // かつ、_xがxからテトロミノの横幅(cols)の範囲内だったら
       if (x <= _x && _x < x + cols.length) {
+        // 配列内にも空の部分には0が含まれるため、判定する
         if (cols[_x - x] > 0) {
           return Tetromino.id(cols[_x - x] as TETROMINO_TYPE)
         }
@@ -81,7 +86,7 @@
         <td
           class="block"
           v-for="(col, x) in row"
-          v-bind:class="classBlockColor(x, y)"
+          :class="classBlockColor(x, y)"
           :key="() => `${x}${y}`"
         >
           {{ col }}
