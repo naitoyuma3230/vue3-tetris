@@ -62,4 +62,41 @@ export class Field {
 
     return new Field(newFieldData)
   }
+
+  // 指定したテトリミノがテトリスのフィールド内で移動可能かどうか判定する
+  // 引数: data には、テトリミノの二次元配列を指定する
+  // 引数: position には、テトリミノの位置を指定する。指定した位置にテトリミノが移動可能か判定する
+  canMove = (data: number[][], position: { x: number; y: number }): boolean => {
+    const y_max = this.field.length
+    const x_max = this.field[0].length
+
+    if (position.y >= y_max) return false
+
+    for (var i = 0; i < data.length; i++) {
+      const rows = data[i]
+      for (var j = 0; j < rows.length; j++) {
+        const block = rows[j]
+        // Fieldを走査して座標j,iにブロックが存在する時
+        if (block > 0) {
+          // Y_max:Field下端の座標
+          // position.y:テトリミノの上端座標
+          // position.y + i:テトリミノの下端座標
+          if (
+            // テトリミノがField下端にはみ出る
+            i + position.y > y_max - 1 ||
+            // テトリスがField左端にはみ出る(j < 0:移動先が－座標の場合)
+            0 > j + position.x ||
+            // テトリスがField右端にはみ出る
+            j + position.x > x_max - 1 ||
+            // 移動先に設置済テトリスが存在する
+            this.field[i + position.y][j + position.x] > 0
+          ) {
+            return false
+          }
+        }
+      }
+    }
+
+    return true
+  }
 }

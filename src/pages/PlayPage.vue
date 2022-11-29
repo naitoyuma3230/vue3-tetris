@@ -14,7 +14,7 @@
 
   // tetrominoオブジェクトでテトロミノ情報をリアクティブに保持
   // current：落下中のテトロミノtype(番号)
-  // position：落下中のテトロミノ位置情報
+  // position：落下中のテトロミノ位置情報(左上)
   const tetromino = reactive({
     current: Tetromino.random(),
     position: { x: 3, y: 0 },
@@ -22,7 +22,7 @@
 
   // 引数：Fieldの座標x,y
   // テトロミノタイプの識別id
-  // 処理：
+  // 引数のFieldの座標_X,_Yと落下中のテトリスの位置、種類からその座標のクラスを判別する
   const classBlockColor = (_x: number, _y: number) => {
     // 現在の落下中のテトロミノpositionを分割代入
     const { x, y } = tetromino.position
@@ -42,10 +42,10 @@
       return Tetromino.id(type as TETROMINO_TYPE)
     }
 
-    // 落下中のテトロミノposition.yが指定した_yより下で
-    // かつ_yがテトロミノの縦幅分(cols)の範囲内だったら
+    // 落下中のテトロミノposition.yが指定した_yより上で(下なら無条件で空)
+    // かつ_yがテトロミノの縦幅分の範囲内だったら
     if (y <= _y && _y < y + data.length) {
-      // 落下中のposition.yからテトリミノの縦幅内の_yまでの距離
+      // 落下中のposition.yからテトリミノの縦幅内の座標_yまでの距離
       // テトリスの形上の設定上、縦幅(_y-y)は1～2cols
       const cols = data[_y - y]
 
@@ -63,14 +63,40 @@
     return ''
   }
 
+  const canDropCurrentTetromino = (): boolean => {
+    const { x, y } = tetromino.position
+    const droppedPosition = { x, y: y + 1 }
+
+    const data = tetromino.current.data
+    // 現在のField状態からテトリミノが下に落下できるか
+    return tetris.field.canMove(data, droppedPosition)
+  }
+
+  const nextTetrisField = () => {
+    const data = tetromino.current.data
+    const position = tetromino.position
+
+    tetris.field.update(data, position)
+
+    // 落下中のテトロミノを含むField情報を落下済状態としてstaticFieldで保存する
+    staticField = new Field(tetris.field.data)
+
+    tetris.field = Field.deepCopy(staticField)
+
+    tetromino.current = Tetromino.random()
+    tetromino.position = { x: 3, y: 0 }
+  }
+
   setInterval(() => {
     // リアクティブのfield情報に静的なfield情報を上書き
     tetris.field = Field.deepCopy(staticField)
 
-    // 落下中のテトロミノposition.y++
-    tetromino.position.y++
-
-    tetris.field.update(tetromino.current.data, tetromino.position)
+    if (canDropCurrentTetromino()) {
+      // 落下中のテトロミノposition.y++
+      tetromino.position.y++
+    } else {
+      nextTetrisField()
+    }
   }, 1 * 1000)
 
   tetris.field.update(tetromino.current.data, tetromino.position)
@@ -81,13 +107,13 @@
   <h2>ユーザ名: {{ $route.query.name }}</h2>
 
   <div class="container">
-    <table class="field" style="border-collapse: collapse">
+    <table class="field">
       <tr v-for="(row, y) in tetris.field.data" :key="y">
         <td
           class="block"
           v-for="(col, x) in row"
-          :class="classBlockColor(x, y)"
           :key="() => `${x}${y}`"
+          :class="classBlockColor(x, y)"
         >
           {{ col }}
         </td>
@@ -97,31 +123,29 @@
 </template>
 
 <style lang="stylus" scoped>
-  .container
-    display:flex
-    justify-content: center
-    align-items: stretch
-  .field
-    border: ridge 0.4em #2c3e50
-    border-top: none
-    background: #ccc
-
   .block
-    width: 1em
-    height: 1em
-    border: 0.1px solid #95a5a6
+    margin: 0
+    border: 1px solid #ccc
+    height: 1em;
+    width: 1em;
     &-i
-      background: #3498db
+      background: #3498db;
     &-o
-      background: #f1c40f
+      background: #f1c40f;
     &-t
-      background: #9b59b6
+      background: #9b59b6;
     &-j
-      background: #1e3799
+      background: #1e3799;
     &-l
-      background: #e67e22
+      background: #e67e22;
     &-s
-      background: #2ecc71
+      background: #2ecc71;
     &-z
-      background: #e74c3c
+      background: #e74c3c;
+
+  .tetromino-preview
+    width: 6.5em;
+    height: 5em;
+    padding: 0.1em;
+    border: solid 0.5px;
 </style>
